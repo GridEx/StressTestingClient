@@ -12,7 +12,7 @@ namespace GridEx.HftClient
 {
 	class Program
 	{
-		const long TotalAmountOfOrdersForTest = 1000000;
+		const long TotalAmountOfOrdersForTest = 1000000000;
 		const long StatisticsStepSize = 100000;
 		const int AmountOfPublishers = 64;
 		const int HftServerPort = 7777;
@@ -21,6 +21,7 @@ namespace GridEx.HftClient
 		static readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		static readonly ManualResetEvent _manualResetEvent = new ManualResetEvent(false);
 		static readonly Stopwatch _currentTPS = new Stopwatch();
+		static readonly CountdownEvent _countdownEvent = new CountdownEvent(AmountOfPublishers);
 
 		static long _cancelledOrders = 0;
 		static long _createdOrders = 0;
@@ -62,6 +63,7 @@ namespace GridEx.HftClient
 			foreach (var userId in Enumerable.Range(0, AmountOfPublishers).Select(_ => Guid.NewGuid()))
 			{
 				var hftSocket = new HftSocket();
+
 				tasks.Add(
 					Task.Factory.StartNew(
 						() => RunHftSocket(hftSocket, hftServerEndpoint, userId),
@@ -75,9 +77,7 @@ namespace GridEx.HftClient
 						TaskCreationOptions.LongRunning));
 			}
 
-			Console.WriteLine("Done.");
-			Console.WriteLine("Waiting server initialization...");
-			Thread.Sleep(5000);
+			_countdownEvent.Wait();
 			Console.WriteLine("Done.");
 
 			var commonTPS = Stopwatch.StartNew();
@@ -109,25 +109,42 @@ namespace GridEx.HftClient
 
 		private static void RunHftSocket(HftSocket hftSocket, IPEndPoint hftServerEndpoint, Guid userId)
 		{
+			hftSocket.OnDisconnected += socket =>
+			{
+				_cancellationTokenSource.Cancel();
+			};
+
+			hftSocket.OnConnected += socket =>
+			{
+			};
+
+			hftSocket.OnError += (socket, error) =>
+			{
+				RunAsyncConsole(error.ToString());
+			};
+
 			hftSocket.OnException += (socket, exception) =>
 			{
-				Console.WriteLine(exception);
+				RunAsyncConsole(exception.ToString());
+				_cancellationTokenSource.Cancel();
 			};
 
 			hftSocket.OnRequestRejected += (socket, eventArgs) =>
 			{
 				Interlocked.Increment(ref _rejectedRequests);
+
 				CalculateOrderProcessed(hftSocket, 1);
 			};
 
 			hftSocket.OnUserTokenAccepted += (socket, eventArgs) =>
 			{
-				Console.WriteLine($"User token {eventArgs.Token} accepted.");
+				_countdownEvent.Signal();
+				RunAsyncConsole($"User token {eventArgs.Token} accepted.");
 			};
 
 			hftSocket.OnUserTokenRejected += (socket, eventArgs) =>
 			{
-				Console.WriteLine("User token rejected.");
+				RunAsyncConsole("User token rejected.");
 			};
 
 			hftSocket.OnAllOrdersCancelled += (socket, eventArgs) =>
@@ -137,7 +154,7 @@ namespace GridEx.HftClient
 				{
 					Interlocked.Add(ref _lastCancelledOrders, StatisticsStepSize);
 
-					Console.WriteLine($"Cancelled orders: {cancelledOrders}.");
+					RunAsyncConsole($"Cancelled orders: {cancelledOrders}.");
 				}
 
 				CalculateOrderProcessed(hftSocket, eventArgs.Amount + 1);
@@ -150,7 +167,7 @@ namespace GridEx.HftClient
 				{
 					Interlocked.Add(ref _lastCancelledOrders, StatisticsStepSize);
 
-					Console.WriteLine($"Cancelled orders: {cancelledOrders}.");
+					RunAsyncConsole($"Cancelled orders: {cancelledOrders}.");
 				}
 
 				CalculateOrderProcessed(hftSocket, 1);
@@ -166,7 +183,7 @@ namespace GridEx.HftClient
 				var createdOrders = Interlocked.Increment(ref _createdOrders);
 				if (createdOrders % StatisticsStepSize == 0)
 				{
-					Console.WriteLine($"Created orders: {createdOrders}.");
+					RunAsyncConsole($"Created orders: {createdOrders}.");
 				}
 			};
 
@@ -175,7 +192,7 @@ namespace GridEx.HftClient
 				var rejectedOrders = Interlocked.Increment(ref _rejectedOrders);
 				if (rejectedOrders % StatisticsStepSize == 0)
 				{
-					Console.WriteLine($"Rejected orders: {rejectedOrders}.");
+					RunAsyncConsole($"Rejected orders: {rejectedOrders}.");
 				}
 
 				CalculateOrderProcessed(hftSocket, 1);
@@ -183,7 +200,7 @@ namespace GridEx.HftClient
 
 			hftSocket.OnConnectionTooSlow += (socket, eventArgs) =>
 			{
-				Console.WriteLine("Connection is too slow. Connection was closed.");
+				RunAsyncConsole("Connection is too slow. Connection was closed.");
 			};
 
 			hftSocket.OnOrderExecuted += (socket, eventArgs) =>
@@ -191,7 +208,7 @@ namespace GridEx.HftClient
 				var executedOrders = Interlocked.Increment(ref _executedOrders);
 				if (executedOrders % StatisticsStepSize == 0)
 				{
-					Console.WriteLine($"Executed orders: {executedOrders}.");
+					RunAsyncConsole($"Executed orders: {executedOrders}.");
 				}
 
 				if (eventArgs.IsCompleted)
@@ -199,7 +216,7 @@ namespace GridEx.HftClient
 					var completedOrders = Interlocked.Increment(ref _completedOrders);
 					if (completedOrders % StatisticsStepSize == 0)
 					{
-						Console.WriteLine($"Completed orders: {completedOrders}.");
+						RunAsyncConsole($"Completed orders: {completedOrders}.");
 					}
 
 					CalculateOrderProcessed(hftSocket, 1);
@@ -208,22 +225,23 @@ namespace GridEx.HftClient
 
 			hftSocket.Connect(hftServerEndpoint);
 			hftSocket.Send(new UserToken(0, userId.ToByteArray()));
-			hftSocket.Wait(_cancellationTokenSource.Token);
+			hftSocket.WaitResponses(_cancellationTokenSource.Token);
 		}
 
-		private static void CalculateOrderProcessed(HftSocket hftSocket, long orders)
+		private static void CalculateOrderProcessed(HftSocket hftSocket, int orders)
 		{
 			var ordersProcessed = Interlocked.Add(ref _processedOrders, orders);
 			var processedOrdersForStep = Interlocked.Add(ref _processedOrdersForStep, orders);
 
 			if (processedOrdersForStep >= StatisticsStepSize)
 			{
+				_processedOrdersForStep = 0;
+
 				if (Interlocked.CompareExchange(ref _currentTPSUpdating, 1, 0) == 0)
 				{
-					_processedOrdersForStep = 0;
 					_currentTPS.Stop();
 					var totalSeconds = _currentTPS.Elapsed.TotalSeconds;
-					Console.WriteLine($"Current TPS: {processedOrdersForStep / totalSeconds}.");
+					RunAsyncConsole($"Current TPS: {processedOrdersForStep / totalSeconds}.");
 					_currentTPS.Reset();
 					_currentTPS.Start();
 					_currentTPSUpdating = 0;
@@ -281,6 +299,11 @@ namespace GridEx.HftClient
 		private static void PrintHelp()
 		{
 			Console.WriteLine("dotnet HftClient <IP>");
+		}
+
+		private static void RunAsyncConsole(string message)
+		{
+			Task.Run(() => Console.WriteLine(message));
 		}
 	}
 }
