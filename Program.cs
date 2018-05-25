@@ -138,8 +138,8 @@ namespace GridEx.HftClient
 
 			hftSocket.OnUserTokenAccepted += (socket, eventArgs) =>
 			{
+				Console.WriteLine($"User token {eventArgs.Token} accepted.");
 				_countdownEvent.Signal();
-				RunAsyncConsole($"User token {eventArgs.Token} accepted.");
 			};
 
 			hftSocket.OnUserTokenRejected += (socket, eventArgs) =>
