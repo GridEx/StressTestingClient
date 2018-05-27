@@ -14,7 +14,7 @@ namespace GridEx.HftClient
 	{
 		const long TotalAmountOfOrdersForTest = 1000000000;
 		const long StatisticsStepSize = 100000;
-		const int AmountOfPublishers = 64;
+		const int AmountOfPublishers = 4;
 		const int HftServerPort = 7777;
 
 		static readonly Random _random = new Random(BitConverter.ToInt32(Guid.NewGuid().ToByteArray(), 0));
