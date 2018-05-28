@@ -1,2 +1,5 @@
 /obj
 /bin
+/.vs/HftClient/v15/*.suo
+/.vs/HftClient/v15/Server/sqlite3/db.lock
+/.vs/HftClient/v15/Server/sqlite3/storage.ide
