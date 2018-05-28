@@ -3,3 +3,5 @@
 /.vs/HftClient/v15/*.suo
 /.vs/HftClient/v15/Server/sqlite3/db.lock
 /.vs/HftClient/v15/Server/sqlite3/storage.ide
+/.vs/HftClient/v15/Server/sqlite3/storage.ide-shm
+/.vs/HftClient/v15/Server/sqlite3/storage.ide-wal

@@ -14,7 +14,7 @@ namespace GridEx.HftClient
 	{
 		const long TotalAmountOfOrdersForTest = 1000000000;
 		const long StatisticsStepSize = 100000;
-		const int AmountOfPublishers = 4;
+		const int AmountOfPublishers = 16;
 		const int HftServerPort = 7777;
 
 		static readonly Random _random = new Random(BitConverter.ToInt32(Guid.NewGuid().ToByteArray(), 0));
@@ -60,7 +60,7 @@ namespace GridEx.HftClient
 			Console.WriteLine("Preparing tasks for stress test and connect to HFT Server...");
 			var tasks = new List<Task>();
 
-			foreach (var userId in Enumerable.Range(0, AmountOfPublishers).Select(_ => Guid.NewGuid()))
+			foreach (var userId in Enumerable.Range(1, AmountOfPublishers))
 			{
 				var hftSocket = new HftSocket();
 
@@ -107,7 +107,7 @@ namespace GridEx.HftClient
 			Console.WriteLine($"Rejected requests: {_rejectedRequests}.");
 		}
 
-		private static void RunHftSocket(HftSocket hftSocket, IPEndPoint hftServerEndpoint, Guid userId)
+		private static void RunHftSocket(HftSocket hftSocket, IPEndPoint hftServerEndpoint, long userId)
 		{
 			hftSocket.OnDisconnected += socket =>
 			{
@@ -224,7 +224,8 @@ namespace GridEx.HftClient
 			};
 
 			hftSocket.Connect(hftServerEndpoint);
-			hftSocket.Send(new UserToken(0, userId.ToByteArray()));
+			// token as int64 is temporary solution for simple testing
+			hftSocket.Send(new UserToken(0, userId));
 			hftSocket.WaitResponses(_cancellationTokenSource.Token);
 		}
 
