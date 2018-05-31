@@ -14,7 +14,7 @@ namespace GridEx.HftClient
 	{
 		const long TotalAmountOfOrdersForTest = 1000000000;
 		const long StatisticsStepSize = 100000;
-		const int AmountOfPublishers = 4;
+		const int AmountOfPublishers = 8;
 		const int HftServerPort = 7777;
 
 		static readonly Random _random = new Random(BitConverter.ToInt32(Guid.NewGuid().ToByteArray(), 0));
@@ -58,9 +58,10 @@ namespace GridEx.HftClient
 			}
 
 			Console.WriteLine("Preparing tasks for stress test and connect to HFT Server...");
+
 			var tasks = new List<Task>();
 
-			foreach (var userId in Enumerable.Range(1, AmountOfPublishers))
+			foreach (var userId in Enumerable.Range(1, AmountOfPublishers).Select(i => DateTime.UtcNow.ToFileTime() + i))
 			{
 				var hftSocket = new HftSocket();
 
