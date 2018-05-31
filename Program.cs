@@ -14,7 +14,7 @@ namespace GridEx.HftClient
 	{
 		const long TotalAmountOfOrdersForTest = 1000000000;
 		const long StatisticsStepSize = 100000;
-		const int AmountOfPublishers = 16;
+		const int AmountOfPublishers = 4;
 		const int HftServerPort = 7777;
 
 		static readonly Random _random = new Random(BitConverter.ToInt32(Guid.NewGuid().ToByteArray(), 0));
@@ -28,7 +28,7 @@ namespace GridEx.HftClient
 		static long _executedOrders = 0;
 		static long _completedOrders = 0;
 		static long _rejectedOrders = 0;
-		static long _lastCancelledOrders = 0;
+		static long _cancelAllOrders = 0;
 		static long _rejectedRequests = 0;
 		static long _processedOrders = 0;
 		static long _processedOrdersForStep = 0;
@@ -103,6 +103,7 @@ namespace GridEx.HftClient
 			Console.WriteLine($"Executed BUY/SELL LIMIT orders: {_executedOrders}.");
 			Console.WriteLine($"Completed BUY/SELL LIMIT orders: {_completedOrders}.");
 			Console.WriteLine($"Cancelled BUY/SELL LIMIT orders: {_cancelledOrders}.");
+			Console.WriteLine($"CANCEL ALL  orders: {_cancelAllOrders}.");
 			Console.WriteLine($"Rejected orders: {_rejectedOrders}.");
 			Console.WriteLine($"Rejected requests: {_rejectedRequests}.");
 		}
@@ -149,26 +150,15 @@ namespace GridEx.HftClient
 
 			hftSocket.OnAllOrdersCancelled += (socket, eventArgs) =>
 			{
-				var cancelledOrders = Interlocked.Add(ref _cancelledOrders, eventArgs.Amount);
-				if (cancelledOrders - _lastCancelledOrders >= StatisticsStepSize)
-				{
-					Interlocked.Add(ref _lastCancelledOrders, StatisticsStepSize);
-
-					RunAsyncConsole($"Cancelled orders: {cancelledOrders}.");
-				}
+				Interlocked.Add(ref _cancelledOrders, eventArgs.Amount);
+				Interlocked.Increment(ref _cancelAllOrders);
 
 				CalculateOrderProcessed(hftSocket, eventArgs.Amount + 1);
 			};
 
 			hftSocket.OnOrderCancelled += (socket, eventArgs) =>
 			{
-				var cancelledOrders = Interlocked.Increment(ref _cancelledOrders);
-				if (cancelledOrders - _lastCancelledOrders >= StatisticsStepSize)
-				{
-					Interlocked.Add(ref _lastCancelledOrders, StatisticsStepSize);
-
-					RunAsyncConsole($"Cancelled orders: {cancelledOrders}.");
-				}
+				Interlocked.Increment(ref _cancelledOrders);
 
 				CalculateOrderProcessed(hftSocket, 1);
 			};
