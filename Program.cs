@@ -60,8 +60,8 @@ namespace GridEx.HftClient
 			Console.WriteLine("Preparing tasks for stress test and connect to HFT Server...");
 
 			var tasks = new List<Task>();
-
-			foreach (var userId in Enumerable.Range(1, AmountOfPublishers).Select(i => DateTime.UtcNow.ToFileTime() + i))
+			var utcNowAsLong = DateTime.UtcNow.ToFileTime();
+			foreach (var userId in Enumerable.Range(1, AmountOfPublishers).Select(i => utcNowAsLong + i))
 			{
 				var hftSocket = new HftSocket();
 
