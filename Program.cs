@@ -251,7 +251,7 @@ namespace GridEx.HftClient
 			_manualResetEvent.WaitOne();
 
 			var batchCounter = 0;
-			var requestId = 0;
+			var requestId = 0L;
 			int processedForUserOrders = 0;
 			while (processedForUserOrders++ < amountOfOrders)
 			{
