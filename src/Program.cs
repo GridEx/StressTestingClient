@@ -12,9 +12,9 @@ namespace GridEx.HftClient
 {
 	class Program
 	{
-		const long TotalAmountOfOrdersForTest = 1000000000;
+		const long TotalAmountOfOrdersForTest = long.MaxValue;
 		const long StatisticsStepSize = 100000;
-		const int AmountOfPublishers = 8;
+		const int AmountOfPublishers = 64;
 		const int HftServerPort = 7777;
 
 		static readonly Random _random = new Random(BitConverter.ToInt32(Guid.NewGuid().ToByteArray(), 0));
@@ -164,11 +164,6 @@ namespace GridEx.HftClient
 				CalculateOrderProcessed(hftSocket, 1);
 			};
 
-			hftSocket.OnMarketInfo += (socket, eventArgs) =>
-			{
-
-			};
-
 			hftSocket.OnOrderCreated += (socket, eventArgs) =>
 			{
 				var createdOrders = Interlocked.Increment(ref _createdOrders);
@@ -242,6 +237,7 @@ namespace GridEx.HftClient
 
 			if (ordersProcessed >= TotalAmountOfOrdersForTest)
 			{
+				hftSocket.Disconnect();
 				_cancellationTokenSource.Cancel();
 			}
 		}
