@@ -1,11 +1,11 @@
-﻿using GridEx.API;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using GridEx.API.Trading;
 using GridEx.API.Trading.Requests;
 
 namespace GridEx.HftClient
