@@ -23,7 +23,7 @@ namespace GridEx.HftClient
 		static readonly Stopwatch _currentTPS = new Stopwatch();
 		static readonly CountdownEvent _countdownEvent = new CountdownEvent(AmountOfPublishers);
 
-		static long _cancelledOrders = 0;
+		static long _canceledOrders = 0;
 		static long _createdOrders = 0;
 		static long _executedOrders = 0;
 		static long _completedOrders = 0;
@@ -103,7 +103,7 @@ namespace GridEx.HftClient
 			Console.WriteLine($"Created BUY/SELL LIMIT orders: {_createdOrders}.");
 			Console.WriteLine($"Executed BUY/SELL LIMIT orders: {_executedOrders}.");
 			Console.WriteLine($"Completed BUY/SELL LIMIT orders: {_completedOrders}.");
-			Console.WriteLine($"Cancelled BUY/SELL LIMIT orders: {_cancelledOrders}.");
+			Console.WriteLine($"Canceled BUY/SELL LIMIT orders: {_canceledOrders}.");
 			Console.WriteLine($"CANCEL ALL  orders: {_cancelAllOrders}.");
 			Console.WriteLine($"Rejected orders: {_rejectedOrders}.");
 			Console.WriteLine($"Rejected requests: {_rejectedRequests}.");
@@ -149,17 +149,17 @@ namespace GridEx.HftClient
 				RunAsyncConsole("User token rejected.");
 			};
 
-			hftSocket.OnAllOrdersCancelled += (socket, eventArgs) =>
+			hftSocket.OnAllOrdersCanceled += (socket, eventArgs) =>
 			{
-				Interlocked.Add(ref _cancelledOrders, eventArgs.Amount);
+				Interlocked.Add(ref _canceledOrders, eventArgs.Amount);
 				Interlocked.Increment(ref _cancelAllOrders);
 
 				CalculateOrderProcessed(hftSocket, eventArgs.Amount + 1);
 			};
 
-			hftSocket.OnOrderCancelled += (socket, eventArgs) =>
+			hftSocket.OnOrderCanceled += (socket, eventArgs) =>
 			{
-				Interlocked.Increment(ref _cancelledOrders);
+				Interlocked.Increment(ref _canceledOrders);
 
 				CalculateOrderProcessed(hftSocket, 1);
 			};
