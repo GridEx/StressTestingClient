@@ -253,10 +253,10 @@ namespace GridEx.HftClient
 			{
 				if (batchCounter < batchSize)
 				{
-					var orderType = processedForUserOrders % 2L == 0L ? RequestTypeCode.SellLimitOrder : RequestTypeCode.BuyLimitOrder;
+					var orderType = processedForUserOrders % 2L == 0L ? HftRequestTypeCode.SellLimitOrder : HftRequestTypeCode.BuyLimitOrder;
 					var price = _random.Next(10000000, 10020001) * 0.00000001;
 					var volume = _random.Next(10000, 100001) * 0.000001;
-					if (orderType == RequestTypeCode.BuyLimitOrder)
+					if (orderType == HftRequestTypeCode.BuyLimitOrder)
 					{
 						socket.Send(new BuyLimitOrder(requestId++, price, volume));
 					}
