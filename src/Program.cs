@@ -151,10 +151,10 @@ namespace GridEx.HftClient
 
 			hftSocket.OnAllOrdersCanceled += (socket, eventArgs) =>
 			{
-				Interlocked.Add(ref _canceledOrders, eventArgs.Amount);
+				Interlocked.Add(ref _canceledOrders, eventArgs.Quantity);
 				Interlocked.Increment(ref _cancelAllOrders);
 
-				CalculateOrderProcessed(hftSocket, eventArgs.Amount + 1);
+				CalculateOrderProcessed(hftSocket, eventArgs.Quantity + 1);
 			};
 
 			hftSocket.OnOrderCanceled += (socket, eventArgs) =>
@@ -184,9 +184,9 @@ namespace GridEx.HftClient
 				CalculateOrderProcessed(hftSocket, 1);
 			};
 
-			hftSocket.OnConnectionTooSlow += (socket, eventArgs) =>
+			hftSocket.OnRestrictionsViolated += (socket, eventArgs) =>
 			{
-				RunAsyncConsole("Connection is too slow. Connection was closed.");
+				RunAsyncConsole("Restrictions were violated. Connection was closed.");
 			};
 
 			hftSocket.OnOrderExecuted += (socket, eventArgs) =>
