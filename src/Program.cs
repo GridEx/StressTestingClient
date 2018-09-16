@@ -138,15 +138,15 @@ namespace GridEx.HftClient
 				CalculateOrderProcessed(hftSocket, 1);
 			};
 
-			hftSocket.OnUserTokenAccepted += (socket, eventArgs) =>
+			hftSocket.OnAccessTokenAccepted += (socket, eventArgs) =>
 			{
-				Console.WriteLine($"User token {eventArgs.Token} accepted.");
+				Console.WriteLine($"Access token {eventArgs.Token} accepted.");
 				_countdownEvent.Signal();
 			};
 
-			hftSocket.OnUserTokenRejected += (socket, eventArgs) =>
+			hftSocket.OnAccessTokenRejected += (socket, eventArgs) =>
 			{
-				RunAsyncConsole("User token rejected.");
+				RunAsyncConsole("Access token rejected.");
 			};
 
 			hftSocket.OnAllOrdersCanceled += (socket, eventArgs) =>
@@ -211,7 +211,7 @@ namespace GridEx.HftClient
 
 			hftSocket.Connect(hftServerEndpoint);
 			// token as int64 is temporary solution for simple testing
-			hftSocket.Send(new UserToken(0, userId));
+			hftSocket.Send(new AccessToken(0, userId));
 			hftSocket.WaitResponses(_cancellationTokenSource.Token);
 		}
 
