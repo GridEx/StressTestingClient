@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using GridEx.API;
 using GridEx.API.Trading;
 using GridEx.API.Trading.Requests;
 
@@ -140,7 +141,7 @@ namespace GridEx.HftClient
 
 			hftSocket.OnAccessTokenAccepted += (socket, eventArgs) =>
 			{
-				Console.WriteLine($"Access token {eventArgs.Token} accepted.");
+				Console.WriteLine($"Access token accepted.");
 				_countdownEvent.Signal();
 			};
 
@@ -211,7 +212,7 @@ namespace GridEx.HftClient
 
 			hftSocket.Connect(hftServerEndpoint);
 			// token as int64 is temporary solution for simple testing
-			hftSocket.Send(new AccessToken(0, userId));
+			hftSocket.Send(new AccessToken(0, new ApiVersion(0, 0, 0), userId));
 			hftSocket.WaitResponses(_cancellationTokenSource.Token);
 		}
 
